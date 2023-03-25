@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, send_file
-from pytube import YouTube
+from flask import Flask, render_template, request, redirect, send_file, jsonify,url_for
+import streamlink
 
 app = Flask(__name__)
 
@@ -22,13 +22,14 @@ def terms():
 def download():
   url = request.form["url"]
   print("Someone just tried to download", url)
-  yt = YouTube(url)
-  itag_list = [
-    stream.itag
-    for stream in yt.streams.filter(file_extension='mp4', progressive=True)
-  ]
-  download = yt.streams.get_by_itag(int(itag_list[0])).download(filename='{}.mp4'.format(yt.title))
-  return send_file('{}.mp4'.format(yt.title), as_attachment=True)
+  streams = streamlink.streams(url)
+  if not streams:
+    return redirect(url_for('terms'))
+  else:
+    stream = streams['best']
+    download_url = stream.url
+    return redirect(download_url)
+    
 
 
 if __name__ == '__main__':
